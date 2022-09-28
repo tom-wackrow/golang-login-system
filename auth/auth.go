@@ -43,7 +43,6 @@ func GetCredentials(w http.ResponseWriter, r *http.Request) Credentials {
 		Username: r.FormValue("username"),
 		Password: r.FormValue("password"),
 	}
-	fmt.Printf("%v %v\n", creds.Username, creds.Password)
 
 	return creds
 }
