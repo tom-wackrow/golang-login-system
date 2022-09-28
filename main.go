@@ -10,6 +10,7 @@ import (
 
 func main() {
 	http.HandleFunc("/login", routes.Login)
+	http.HandleFunc("/refresh", routes.Refresh)
 	http.HandleFunc("/dashboard", auth.RequireAuth(routes.Dashboard))
 	http.ListenAndServe(":80", nil)
 }

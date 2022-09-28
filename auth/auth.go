@@ -109,7 +109,21 @@ func RefreshAuth(w http.ResponseWriter, r *http.Request) {
 		Expires: expiresAt,
 	})
 	
-} 
+}
+
+func Logout(w http.ResponseWriter, r  *http.Request) {
+	cookie, _ := r.Cookie("session")
+
+	sessionToken := cookie.Value
+
+	delete(sessions, sessionToken)
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "session",
+		Value: "",
+		Expires: time.Now(),
+	})
+}
 
 func RequireAuth(f http.HandlerFunc) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {

@@ -10,7 +10,7 @@ import (
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		if auth.Auth(w, r){
+		if auth.Auth(w, r) {
 			http.Redirect(w, r, "/dashboard", 303)
 		}
 		return
@@ -21,6 +21,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Dashboard(w http.ResponseWriter, r *http.Request) {
-	tmpl, _ := template.ParseFiles("templates/login.html")
+	tmpl, _ := template.ParseFiles("templates/dashboard.html")
 	tmpl.Execute(w, nil)
+}
+
+func Refresh(w http.ResponseWriter, r *http.Request) {
+	auth.RefreshAuth(w, r)
 }
