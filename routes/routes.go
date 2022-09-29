@@ -32,6 +32,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		auth.Register(w, r)
+		if auth.Auth(w, r) {
+			http.Redirect(w, r, "/dashboard", 303)
+		}
 	}
 
 	tmpl, _ := template.ParseFiles("templates/base.html", "templates/register.html")
