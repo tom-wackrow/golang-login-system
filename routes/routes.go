@@ -26,6 +26,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	tmpl, _ := template.ParseFiles("templates/base.html", "templates/login.html")
 	tmpl.Execute(w, nil)
 }
+
+func Register(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		auth.Register(w, r)
+	}
+
+	tmpl, _ := template.ParseFiles("templates/base.html", "templates/login.html")
+	tmpl.Execute(w, nil)
+
+
+}
 func Refresh(w http.ResponseWriter, r *http.Request) {
 	auth.RefreshAuth(w, r)
 }
@@ -47,9 +58,12 @@ func logWrapper(f http.HandlerFunc) http.HandlerFunc {
 }
 
 func Run() {
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/", fs)
+	http.HandleFunc("/register", logWrapper(Register))
 	http.HandleFunc("/login", logWrapper(Login))
 	http.HandleFunc("/refresh", logWrapper(Refresh))
-	http.HandleFunc("/logout", logWrapper(Logout))
+	http.HandleFunc("/logout", logWrapper(auth.RequireAuth(Logout)))
 	http.HandleFunc("/dashboard", logWrapper(auth.RequireAuth(Dashboard)))
 	// http.ListenAndServeTLS(":80", "localhost.crt", "localhost.key", nil)
 	http.ListenAndServe(":80", nil)

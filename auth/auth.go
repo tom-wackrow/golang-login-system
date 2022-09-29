@@ -94,6 +94,28 @@ func Auth(w http.ResponseWriter, r *http.Request) bool{
 	return true
 }
 
+func Register(w http.ResponseWriter, r *http.Request) {
+	var creds = Credentials{
+		Username: r.FormValue("username"),
+		Password: r.FormValue("password"),
+	}
+
+	sessionToken := uuid.NewString()
+	expiresAt := time.Now().Add(120 * time.Second)
+	sessions[sessionToken] = session{
+		username: creds.Username,
+		expiry: expiresAt,
+	}
+	users[creds.Username] = creds.Password
+
+	http.SetCookie(w, &http.Cookie{
+		Name: "session",
+		Value: sessionToken,
+		Expires: expiresAt,
+	})
+
+
+}
 
 func RefreshAuth(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
@@ -151,10 +173,6 @@ func RequireAuth(f http.HandlerFunc) http.HandlerFunc {
 		cookie, err := r.Cookie("session")
 
 		if err != nil {
-			if err == http.ErrNoCookie {
-				http.Redirect(w, r, "/login", 303)
-				return
-			}
 			http.Redirect(w, r, "/login", 303)
 			return
 		}
