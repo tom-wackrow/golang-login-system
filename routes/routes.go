@@ -8,12 +8,11 @@ import (
 	auth "github.com/tommytank20/login/auth"
 )
 
-
-
-
 func Dashboard(w http.ResponseWriter, r *http.Request) {
-	tmpl, _ := template.ParseFiles("templates/dashboard.html")
-	tmpl.Execute(w, nil)
+	tmpl, _ := template.ParseFiles("templates/base.html", "templates/dashboard.html")
+	cookie, _ := r.Cookie("session")
+	sessionToken := cookie.Value
+	tmpl.Execute(w, sessionToken)
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +23,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, _ := template.ParseFiles("templates/login.html")
+	tmpl, _ := template.ParseFiles("templates/base.html", "templates/login.html")
 	tmpl.Execute(w, nil)
 }
 func Refresh(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +37,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 func logWrapper(f http.HandlerFunc) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {
-		f(w,r )
+		f(w, r)
 
 		uri := r.URL.String()
 		method := r.Method
@@ -52,5 +51,6 @@ func Run() {
 	http.HandleFunc("/refresh", logWrapper(Refresh))
 	http.HandleFunc("/logout", logWrapper(Logout))
 	http.HandleFunc("/dashboard", logWrapper(auth.RequireAuth(Dashboard)))
+	// http.ListenAndServeTLS(":80", "localhost.crt", "localhost.key", nil)
 	http.ListenAndServe(":80", nil)
 }

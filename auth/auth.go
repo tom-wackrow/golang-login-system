@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -47,6 +46,28 @@ func GetCredentials(w http.ResponseWriter, r *http.Request) Credentials {
 	return creds
 }
 
+func GetSession(w http.ResponseWriter, r *http.Request) (session, error) {
+	cookie, err := r.Cookie("session")
+
+	if err != nil {
+		return session{}, http.ErrNoCookie
+	}
+
+	sessionToken := cookie.Value
+
+	userSession, exists := sessions[sessionToken]
+	if !exists {
+		return session{}, http.ErrNoCookie
+	}
+
+	if userSession.isExpired() {
+		delete(sessions, sessionToken)
+		return session{}, http.ErrNoCookie
+	}
+
+	return userSession, nil
+}
+
 func Auth(w http.ResponseWriter, r *http.Request) bool{
 	creds := GetCredentials(w, r)
 
@@ -72,6 +93,7 @@ func Auth(w http.ResponseWriter, r *http.Request) bool{
 
 	return true
 }
+
 
 func RefreshAuth(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
@@ -152,7 +174,7 @@ func RequireAuth(f http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		w.Write([]byte(fmt.Sprintf("Token: %s", sessionToken)))
+		// w.Write([]byte(fmt.Sprintf("Token: %s", sessionToken)))
 
 
 
