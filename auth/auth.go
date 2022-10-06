@@ -1,15 +1,16 @@
 package auth
 
 import (
+	"crypto/sha256"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-var users = map[string]string{
-	"admin": "admin",
-	"test": "test",
+var users = map[string][32]byte{
+	"admin": sha256.Sum256([]byte("admin")),
+	"test": sha256.Sum256([]byte("test")),
 }
 
 var sessions = map[string]session{}
@@ -21,8 +22,8 @@ type session struct {
 }
 
 type Credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string
+	Password string
 }
 
 func (s session) isExpired() bool {
@@ -73,7 +74,7 @@ func Auth(w http.ResponseWriter, r *http.Request) bool{
 
 	expectedPassword, ok := users[creds.Username]
 
-	if !ok || expectedPassword != creds.Password {
+	if !ok || expectedPassword != sha256.Sum256([]byte(creds.Password)) {
 		return false
 	}
 
@@ -106,7 +107,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		username: creds.Username,
 		expiry: expiresAt,
 	}
-	users[creds.Username] = creds.Password
+	users[creds.Username] = sha256.Sum256([]byte(creds.Password))
 
 	http.SetCookie(w, &http.Cookie{
 		Name: "session",
@@ -151,7 +152,7 @@ func RefreshAuth(w http.ResponseWriter, r *http.Request) {
 		Value: newSessionToken,
 		Expires: expiresAt,
 	})
-	
+	http.Redirect(w, r, "/dashboard", 303)
 }
 
 func Logout(w http.ResponseWriter, r  *http.Request) {
@@ -168,6 +169,8 @@ func Logout(w http.ResponseWriter, r  *http.Request) {
 	})
 }
 
+
+// f is a http handler function for a page on the website that requires the user to be logged in
 func RequireAuth(f http.HandlerFunc) http.HandlerFunc {
 	return func (w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session")
@@ -196,7 +199,7 @@ func RequireAuth(f http.HandlerFunc) http.HandlerFunc {
 
 
 
-		f(w, r)
+		f(w, r) // execute original function
 		return
 	}
 }

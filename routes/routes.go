@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	auth "github.com/tommytank20/login/auth"
+	sockets "github.com/tommytank20/login/sockets"
 )
 
 func Dashboard(w http.ResponseWriter, r *http.Request) {
@@ -20,6 +21,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		if auth.Auth(w, r) {
 			http.Redirect(w, r, "/dashboard", 303)
 		}
+		http.Redirect(w, r, "/login", 303)
 		return
 	}
 
@@ -32,13 +34,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		auth.Register(w, r)
 	}
 
-	tmpl, _ := template.ParseFiles("templates/base.html", "templates/login.html")
+	tmpl, _ := template.ParseFiles("templates/base.html", "templates/register.html")
 	tmpl.Execute(w, nil)
-
-
 }
+
 func Refresh(w http.ResponseWriter, r *http.Request) {
 	auth.RefreshAuth(w, r)
+	http.Redirect(w, r, "/dashboard", 303)
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
@@ -60,9 +62,10 @@ func logWrapper(f http.HandlerFunc) http.HandlerFunc {
 func Run() {
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
+	http.HandleFunc("/socket", sockets.Handler)
 	http.HandleFunc("/register", logWrapper(Register))
 	http.HandleFunc("/login", logWrapper(Login))
-	http.HandleFunc("/refresh", logWrapper(Refresh))
+	http.HandleFunc("/refresh", logWrapper(auth.RequireAuth(Refresh)))
 	http.HandleFunc("/logout", logWrapper(auth.RequireAuth(Logout)))
 	http.HandleFunc("/dashboard", logWrapper(auth.RequireAuth(Dashboard)))
 	// http.ListenAndServeTLS(":80", "localhost.crt", "localhost.key", nil)
